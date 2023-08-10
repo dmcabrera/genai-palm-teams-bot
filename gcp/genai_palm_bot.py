@@ -1,0 +1,69 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+import os
+import codecs
+import vertexai
+from vertexai.preview.language_models import TextGenerationModel
+from infofin_tool import InfoFinTool
+
+class GenAIPaLMBot(object):
+
+    # Constructor
+    def __init__(self):
+        # Initialize the VertexAI client
+        PROJECT_ID = os.environ['PROJECT_ID']
+        LOCATION = "us-central1"
+        MODEL_NAME = "text-bison@001"
+        vertexai.init(project=PROJECT_ID, location=LOCATION)
+
+        # Initialize the language model
+        self.model = TextGenerationModel.from_pretrained(MODEL_NAME)
+
+        # Initialize the InfoFinTool
+        self.infofin_tool = InfoFinTool()
+
+    # Chat
+    def chat(self, message):
+
+        # Busco en el Search Engine
+        context, sources = self.infofin_tool.query(message)
+
+        print(context)
+
+        # Armo el prompt
+        prompt = """Use the following pieces of context to answer the question at the end. 
+If you don't know the answer, just say that you don't know, don't try to make up an answer. 
+Keep the answer as concise as possible. 
+Always answer in Spanish. 
+{}
+Question: {}
+Helpful Answer:"""
+
+        # Respondo la pregunta
+        response = self.model.predict(
+            prompt=prompt.format(context, message),
+            temperature=0.2,
+            max_output_tokens=1024,
+            top_k=40,
+            top_p=0.8,)
+        
+        answer = response.text.encode('utf-8', errors='ignore').decode('utf-8', errors='backslashreplace')
+        
+        #response = response + "\n\n**Fuentes:**\n" + sources
+        print(answer)
+        
+        # Retorno la respuesta
+        return answer

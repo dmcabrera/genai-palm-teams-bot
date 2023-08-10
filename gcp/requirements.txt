@@ -1,0 +1,6 @@
+gunicorn
+Flask
+flask-cors
+google-cloud-aiplatform
+google-cloud-discoveryengine
+langchain
